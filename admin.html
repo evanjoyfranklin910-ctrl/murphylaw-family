@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MurphyLaw — Admin</title><link rel="stylesheet" href="style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script>
+<style>
+.admin-wrap{max-width:1250px;margin:auto;padding:105px 5vw 60px}.admin-top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:25px}.admin-top h1{font:700 38px Cinzel;margin:5px 0}.panel{background:#120b0e;border:1px solid #3b252b;padding:25px;margin-bottom:20px}.panel h2{font:600 22px Cinzel;color:#e1c77f}.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.field{display:flex;flex-direction:column;gap:7px}.full{grid-column:1/-1}label{font-size:10px;color:#c8a45d;text-transform:uppercase;letter-spacing:1px}input,select,textarea{padding:12px;background:#0c080a;border:1px solid #4b3439;color:#eee;font:inherit}textarea{min-height:90px}.btn-admin{border:1px solid #c8a45d;background:#5b0d1b;color:#fff;padding:11px 16px;cursor:pointer}.btn-admin.secondary{background:transparent}.btn-admin.danger{background:#350913;border-color:#8d3a48}.admin-actions{display:flex;gap:10px;flex-wrap:wrap}.rows{overflow:auto}.row{display:grid;grid-template-columns:2fr 1fr 80px 2fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #2d1e22}.login{max-width:430px;margin:120px auto}.hidden{display:none!important}.notice{background:#1a0d11;border:1px solid #4b3036;padding:13px;color:#bdb0b2;font-size:12px;line-height:1.6}.photo-preview{width:80px;height:90px;object-fit:cover;border:1px solid #5a4046}
+@media(max-width:800px){.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.row{grid-template-columns:1fr}.admin-top{flex-direction:column;align-items:flex-start}}
+</style></head>
+<body><header class="nav"><a class="brand" href="index.html"><span>ML</span> MURPHYLAW</a><nav><a href="index.html">Website</a><a href="#" id="logout">Logout</a></nav></header>
+<div id="login" class="panel login"><p class="eyebrow">PRIVATE ACCESS</p><h1 style="font-family:Cinzel">Admin Login</h1><div class="field"><label>Email</label><input id="email" type="email" autocomplete="username"></div><br><div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password"></div><button id="loginBtn" class="btn-admin" style="width:100%;margin-top:15px">Masuk</button><p id="loginMsg" style="color:#e79aaa"></p><p style="font-size:11px;color:#777">Akun dibuat melalui Supabase Authentication.</p></div>
+<main id="dash" class="admin-wrap hidden"><div class="admin-top"><div><p class="eyebrow">MURPHYLAW CONTROL ROOM</p><h1>Admin Dashboard</h1><p style="color:#999">Database online + Auth + Storage</p></div><div class="admin-actions"><button id="logout2" class="btn-admin secondary">Logout</button></div></div>
+<div class="notice">Kamu harus terdaftar di tabel <b>admin_users</b>. Foto diupload ke Supabase Storage, sedangkan data keluarga disimpan di PostgreSQL.</div>
+<section class="panel"><h2 id="memberTitle">Tambah Anggota</h2><div class="form-grid">
+<div class="field"><label>Nama RP</label><input id="name"></div><div class="field"><label>Jabatan</label><input id="rank"></div>
+<div class="field"><label>Generasi</label><input id="generation" type="number" min="1" value="1"></div><div class="field"><label>Orang Tua</label><select id="parents" multiple size="5"></select></div>
+<div class="field"><label>Upload Foto</label><input id="photoFile" type="file" accept="image/*"></div><div class="field"><label>Status</label><input id="status" value="Active"></div>
+<div class="field"><label>Asal</label><input id="origin" value="France"></div><div class="field"><label>Hubungan</label><input id="relation"></div>
+<div class="field full"><label>Bio</label><textarea id="bio"></textarea></div></div>
+<div class="admin-actions" style="margin-top:16px"><button id="saveMember" class="btn-admin">Simpan</button><button id="cancel" class="btn-admin secondary hidden">Batal</button></div></section>
+<section class="panel"><h2>Anggota</h2><div id="memberRows" class="rows"></div></section>
+<section class="panel"><h2>History</h2><div id="events"></div><div class="admin-actions"><button id="addEvent" class="btn-admin secondary">+ Event</button><button id="saveEvents" class="btn-admin">Simpan History</button></div></section>
+<section class="panel"><h2>Gallery</h2><div id="gallery"></div><div class="admin-actions"><button id="addGallery" class="btn-admin secondary">+ Foto</button><button id="saveGallery" class="btn-admin">Simpan Gallery</button></div></section>
+</main>
+<script src="admin-app.js"></script></body></html>
