@@ -1,28 +1,65 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MurphyLaw — Family Archive</title>
-<meta name="description" content="Arsip digital keluarga MurphyLaw.">
-<link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MurphyLaw — Family Legacy</title>
+  <meta name="description" content="MurphyLaw Family — a living archive of generations, relationships and legacy." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<header class="nav"><a class="brand" href="#home"><span>ML</span> MURPHYLAW</a><button class="menu">☰</button>
-<nav><a href="#home">Home</a><a href="#tree">Silsilah</a><a href="#members">Anggota</a><a href="#history">History</a><a href="#gallery">Gallery</a><a href="admin.html">Admin</a></nav></header>
-<main>
-<section id="home" class="hero"><div class="hero-overlay"></div><div class="hero-content">
-<p class="eyebrow">FAMILLE MURPHYLAW • FRANCE</p><h1>MURPHY<span>LAW</span></h1><p class="motto">L'ÉQUILIBRE DANS LE CHAOS</p>
-<p class="intro">Arsip keluarga, garis keturunan, dan perjalanan MurphyLaw dalam dunia roleplay.</p>
-<div class="actions"><a class="btn primary" href="#tree">Lihat Silsilah</a><a class="btn ghost" href="#history">Kisah Keluarga</a></div></div><div class="crest-mark">♛<small>ML</small></div></section>
-<section class="stats"><div><strong id="memberCount">—</strong><span>Members</span></div><div><strong id="generationCount">—</strong><span>Generations</span></div><div><strong id="eventCount">—</strong><span>Important Events</span></div></section>
-<section id="tree" class="section"><div class="section-head"><p class="eyebrow">THE BLOODLINE</p><h2>Family Tree</h2><p>Data ditarik langsung dari database online.</p></div><div id="treeRoot" class="tree"></div><p class="tree-note">Klik kartu anggota untuk melihat profil, pasangan, orang tua, anak, dan saudara.</p></section>
-<section id="members" class="section dark"><div class="section-head"><p class="eyebrow">THE FAMILY</p><h2>Anggota Keluarga</h2><div class="filters"><input id="search" type="search" placeholder="Cari nama anggota..."><select id="rankFilter"><option value="">Semua jabatan</option></select></div></div><div id="memberGrid" class="member-grid"></div></section>
-<section id="history" class="section"><div class="section-head"><p class="eyebrow">OUR STORY</p><h2>History</h2></div><div id="timeline" class="timeline"></div></section>
-<section id="gallery" class="section dark"><div class="section-head"><p class="eyebrow">FAMILY MOMENTS</p><h2>Gallery</h2></div><div id="galleryGrid" class="gallery"></div></section>
-</main>
-<footer><div><b>MURPHYLAW</b><span>L'ÉQUILIBRE DANS LE CHAOS</span></div><p>© 2026 MurphyLaw RP • Online Family Archive</p></footer>
-<div id="modal" class="modal"><div class="modal-card"><button id="closeModal" class="close">×</button><div id="modalBody"></div></div></div>
-<script src="app.js"></script>
-</body></html>
+  <div class="noise"></div>
+  <header class="topbar">
+    <a class="brand" href="#home"><span class="brand-mark">M</span><span>MURPHY<span>LAW</span></span></a>
+    <nav>
+      <a href="#tree">Family Tree</a><a href="#history">History</a><a href="#members">Members</a><a href="#gallery">Gallery</a>
+    </nav>
+    <a class="admin-link" href="admin.html">Admin ↗</a>
+  </header>
+
+  <main>
+    <section id="home" class="hero">
+      <div class="hero-glow"></div>
+      <div class="hero-copy">
+        <div class="eyebrow">THE MURPHYLAW DYNASTY</div>
+        <h1>A Family.<br><em>A Legacy.</em><br>A Story.</h1>
+        <p class="hero-text">A living archive of the people, bonds and moments that shaped the MurphyLaw family across generations.</p>
+        <div class="hero-actions"><a class="btn primary" href="#tree">Explore the Family</a><a class="btn ghost" href="#history">Our Story</a></div>
+        <div class="hero-stats"><div><b id="heroMembers">—</b><span>Members</span></div><div><b id="heroGenerations">—</b><span>Generations</span></div><div><b id="heroRelations">—</b><span>Connections</span></div></div>
+      </div>
+      <div class="hero-crest"><div class="crest-ring"></div><img src="assets/murphylaw-crest.png" alt="MurphyLaw family crest"><span>LOYALTY · HONOUR · LEGACY</span></div>
+    </section>
+
+    <section id="tree" class="section tree-section">
+      <div class="section-head"><div><div class="eyebrow">THE BLOODLINE</div><h2>Family <em>Tree</em></h2></div><div class="tree-tools"><button id="zoomOut">−</button><button id="zoomReset">100%</button><button id="zoomIn">+</button><button id="treeFit">Fit</button></div></div>
+      <p class="section-lead">From founder to the newest generation. Couples are shown together, with children flowing beneath them.</p>
+      <div class="tree-shell"><div id="treeCanvas" class="tree-canvas"><div id="treeLoading" class="loading">Loading family tree…</div></div></div>
+    </section>
+
+    <section id="history" class="section history-section">
+      <div class="section-head"><div><div class="eyebrow">THE CHRONICLE</div><h2>Family <em>History</em></h2></div></div>
+      <div id="historyGrid" class="timeline"></div>
+    </section>
+
+    <section id="members" class="section members-section">
+      <div class="section-head"><div><div class="eyebrow">THE HOUSE</div><h2>Family <em>Members</em></h2></div><div class="member-search"><input id="memberSearch" placeholder="Search a member…"><span>⌕</span></div></div>
+      <div id="membersGrid" class="members-grid"></div>
+    </section>
+
+    <section id="gallery" class="section gallery-section">
+      <div class="section-head"><div><div class="eyebrow">MEMORIES</div><h2>Family <em>Gallery</em></h2></div></div>
+      <div id="galleryGrid" class="gallery-grid"></div>
+    </section>
+  </main>
+
+  <footer><div class="footer-crest">M</div><div><strong>MURPHYLAW</strong><span>Family Heritage Archive</span></div><p>© <span id="year"></span> MurphyLaw. A legacy carried forward.</p></footer>
+
+  <div id="profileModal" class="modal hidden"><div class="modal-backdrop" data-close></div><div class="profile-card"><button class="modal-close" data-close>×</button><div id="profileContent"></div></div></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

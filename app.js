@@ -1,11 +1,80 @@
-const {createClient}=supabase;const client=createClient(ML_CONFIG.SUPABASE_URL,ML_CONFIG.SUPABASE_PUBLISHABLE_KEY);const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));function publicUrl(path){if(!path)return '';if(/^https?:\/\//.test(path))return path;return client.storage.from('family-photos').getPublicUrl(path).data.publicUrl}function img(path,alt=''){const src=publicUrl(path);return `<img class="portrait" src="${src||'assets/founder.svg'}" onerror="this.src='assets/founder.svg'" alt="${esc(alt)}">`}let members=[],parents=[],relationships=[],events=[],gallery=[];
-async function load(){const [m,p,r,e,g]=await Promise.all([client.from('members').select('*').order('generation').order('name'),client.from('member_parents').select('*'),client.from('member_relationships').select('*'),client.from('events').select('*').order('sort_order').order('created_at'),client.from('gallery').select('*').order('sort_order').order('created_at')]);if(m.error||p.error||r.error||e.error||g.error){console.error(m.error,p.error,r.error,e.error,g.error);alert('Database belum terhubung. Pastikan schema-v2.sql sudah dijalankan dan config.js benar.');return}members=m.data||[];parents=p.data||[];relationships=r.data||[];events=e.data||[];gallery=g.data||[];render()}
-function card(m,tree=false){return `<article class="${tree?'tree-card':'member-card'}" data-id="${m.id}">${img(m.photo_path,m.name)}<h3>${esc(m.name)}</h3><div class="rank">${esc(m.rank)}</div>${tree?'':`<p>${esc(m.bio)}</p>`}</article>`}
-function renderTree(){const gens=[...new Set(members.map(m=>m.generation))].sort((a,b)=>a-b);$('#treeRoot').innerHTML=gens.map((g,i)=>`${i?'<div class="connector"></div>':''}<div class="generation"><div class="generation-label">GENERATION ${g}</div>${members.filter(m=>m.generation===g).map(m=>card(m,true)).join('')}</div>`).join('')||'<p>Belum ada anggota.</p>'}
-function renderMembers(){const q=$('#search').value.toLowerCase(),r=$('#rankFilter').value;const list=members.filter(m=>(m.name.toLowerCase().includes(q)||(m.nickname||'').toLowerCase().includes(q)||m.rank.toLowerCase().includes(q))&&(!r||m.rank===r));$('#memberGrid').innerHTML=list.map(m=>card(m)).join('')||'<p>Tidak ditemukan.</p>'}
-function renderHistory(){$('#timeline').innerHTML=events.map(e=>`<article class="event"><div class="year">${esc(e.year)}</div><h3>${esc(e.title)}</h3><p>${esc(e.body)}</p></article>`).join('')||'<p>Belum ada history.</p>'}
-function renderGallery(){$('#galleryGrid').innerHTML=gallery.map(g=>`<figure><img src="${publicUrl(g.image_path)}" onerror="this.src='assets/gallery-1.svg'" alt="${esc(g.title)}"><figcaption>${esc(g.title)}</figcaption></figure>`).join('')||'<p>Belum ada foto.</p>'}
-function relationText(r,id){const other=members.find(m=>m.id===(r.member_a_id===id?r.member_b_id:r.member_a_id));return {other,type:r.relationship_type,status:r.status,start:r.start_date,end:r.end_date,notes:r.notes}}
-function profile(id){const m=members.find(x=>x.id===id);if(!m)return;const ps=parents.filter(p=>p.member_id===id).map(p=>members.find(x=>x.id===p.parent_id)?.name).filter(Boolean);const children=parents.filter(p=>p.parent_id===id).map(p=>members.find(x=>x.id===p.member_id)?.name).filter(Boolean);const rels=relationships.filter(r=>r.member_a_id===id||r.member_b_id===id).map(r=>relationText(r,id)).filter(x=>x.other);const spouse=rels.filter(x=>x.type==='spouse'||x.type==='partner');const siblings=rels.filter(x=>x.type==='sibling');const list=(arr,empty='—')=>arr.length?arr.map(x=>esc(x)).join(', '):empty;const relBlock=spouse.length?spouse.map(x=>`<div class="relation-box"><b>💍 ${esc(x.other.name)}</b><span>${esc(x.status)}${x.start?' • sejak '+new Date(x.start).toLocaleDateString('id-ID'):''}${x.end?' • sampai '+new Date(x.end).toLocaleDateString('id-ID'):''}</span>${x.notes?`<small>${esc(x.notes)}</small>`:''}</div>`).join(''):'—';$('#modalBody').innerHTML=`<div class="profile">${img(m.photo_path,m.name)}<div><p class="eyebrow">${esc(m.rank)} • GENERASI ${m.generation}</p><h2>${esc(m.name)}</h2>${m.nickname?`<p class="nickname">“${esc(m.nickname)}”</p>`:''}<p class="bio">${esc(m.bio)}</p><dl><dt>Status</dt><dd>${esc(m.status)}</dd><dt>Asal</dt><dd>${esc(m.origin)}</dd><dt>Lahir</dt><dd>${m.birth_date?new Date(m.birth_date).toLocaleDateString('id-ID'):'—'}</dd><dt>Bergabung</dt><dd>${m.joined_date?new Date(m.joined_date).toLocaleDateString('id-ID'):'—'}</dd><dt>Orang Tua</dt><dd>${list(ps)}</dd><dt>Anak</dt><dd>${list(children)}</dd><dt>Saudara</dt><dd>${list(siblings.map(x=>x.other.name))}</dd></dl><h4>💍 Pernikahan / Pasangan</h4>${relBlock}<p class="profile-relation">${esc(m.relation)}</p></div></div>`;$('#modal').classList.add('open')}
-function render(){$('#memberCount').textContent=members.length;$('#generationCount').textContent=new Set(members.map(m=>m.generation)).size;$('#eventCount').textContent=events.length;$('#rankFilter').innerHTML='<option value="">Semua jabatan</option>'+[...new Set(members.map(m=>m.rank))].sort().map(r=>`<option>${esc(r)}</option>`).join('');renderTree();renderMembers();renderHistory();renderGallery()}
-document.addEventListener('click',e=>{const c=e.target.closest('[data-id]');if(c)profile(c.dataset.id)});$('#closeModal').onclick=()=>$('#modal').classList.remove('open');$('#modal').onclick=e=>{if(e.target===$('#modal'))$('#modal').classList.remove('open')};$('#search').oninput=renderMembers;$('#rankFilter').onchange=renderMembers;load();
+const { createClient } = window.supabase;
+const sb = createClient(window.ML_CONFIG.SUPABASE_URL, window.ML_CONFIG.SUPABASE_PUBLISHABLE_KEY);
+const state = { members: [], parents: [], relationships: [], events: [], gallery: [], scale: 1 };
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const photo = (m, cls='') => m?.photo_path ? `${window.ML_CONFIG.SUPABASE_URL}/storage/v1/object/public/family-photos/${m.photo_path}` : `assets/${m?.generation === 1 ? 'founder.svg' : 'member-2.svg'}`;
+const fmtDate = d => d ? new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'long',year:'numeric'}).format(new Date(d+'T00:00:00')) : '';
+
+async function load(){
+  const [m,p,r,e,g] = await Promise.all([
+    sb.from('members').select('*').order('generation').order('name'),
+    sb.from('member_parents').select('*'),
+    sb.from('member_relationships').select('*').order('start_date'),
+    sb.from('events').select('*').order('event_date'),
+    sb.from('gallery').select('*').order('created_at',{ascending:false})
+  ]);
+  if(m.error){ console.error(m.error); $('#treeLoading').textContent='Supabase belum terhubung. Periksa config.js.'; return; }
+  state.members=m.data||[]; state.parents=p.data||[]; state.relationships=r.data||[]; state.events=e.data||[]; state.gallery=g.data||[];
+  renderStats(); renderTree(); renderMembers(); renderHistory(); renderGallery();
+}
+function renderStats(){
+  $('#heroMembers').textContent=state.members.length;
+  $('#heroGenerations').textContent=state.members.length?Math.max(...state.members.map(x=>x.generation||1)):0;
+  $('#heroRelations').textContent=state.relationships.length+state.parents.length;
+}
+function relFor(id){ return state.relationships.filter(r=>r.member_a_id===id||r.member_b_id===id); }
+function partnerOf(id){ return relFor(id).filter(r=>['spouse','partner'].includes(r.relationship_type)).map(r=>state.members.find(m=>m.id===(r.member_a_id===id?r.member_b_id:r.member_a_id))).filter(Boolean); }
+function childrenOf(id){ return state.parents.filter(x=>x.parent_id===id).map(x=>state.members.find(m=>m.id===x.member_id)).filter(Boolean); }
+function parentsOf(id){ return state.parents.filter(x=>x.member_id===id).map(x=>state.members.find(m=>m.id===x.parent_id)).filter(Boolean); }
+function siblingsOf(id){ const ps=parentsOf(id).map(x=>x.id); return state.members.filter(m=>m.id!==id && state.parents.some(x=>x.member_id===m.id && ps.includes(x.parent_id))); }
+function initials(n){ return (n||'ML').split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase(); }
+function card(m, compact=false){
+  const p=partnerOf(m.id)[0];
+  return `<button class="person ${compact?'compact':''}" data-id="${m.id}"><div class="person-photo"><img src="${esc(photo(m))}" alt="${esc(m.name)}"><span>${initials(m.name)}</span></div><div class="person-info"><small>GEN ${esc(m.generation||'—')}</small><strong>${esc(m.name)}</strong>${m.nickname?`<em>“${esc(m.nickname)}”</em>`:''}<label>${p?'💍 '+esc(p.name):esc(m.rank||m.status||'Family Member')}</label></div></button>`;
+}
+function renderTree(){
+  const canvas=$('#treeCanvas'); canvas.innerHTML='';
+  const roots=state.members.filter(m=>!state.parents.some(p=>p.member_id===m.id));
+  const start=roots.length?roots:state.members.filter(m=>(m.generation||1)===1);
+  if(!start.length){canvas.innerHTML='<div class="empty">Belum ada anggota keluarga.</div>';return;}
+  const used=new Set(); const forest=document.createElement('div'); forest.className='forest';
+  start.forEach(r=>{ const node=buildNode(r,0,used); if(node) forest.appendChild(node); });
+  state.members.filter(m=>!used.has(m.id)).forEach(m=>forest.appendChild(buildNode(m,0,used)));
+  canvas.appendChild(forest); applyScale();
+}
+function buildNode(m,depth,used){
+  if(used.has(m.id)) return null; used.add(m.id);
+  const partners=partnerOf(m.id); const people=[m,...partners.filter(p=>!used.has(p.id))]; partners.forEach(p=>used.add(p.id));
+  const couple=document.createElement('div'); couple.className='family-node';
+  const cards=document.createElement('div'); cards.className='couple'; people.forEach(x=>cards.insertAdjacentHTML('beforeend',card(x,true))); couple.appendChild(cards);
+  const kids=[...new Set(people.flatMap(x=>childrenOf(x.id).map(k=>k.id)))].map(id=>state.members.find(x=>x.id===id)).filter(Boolean).filter(k=>!used.has(k.id));
+  if(kids.length){ const line=document.createElement('div'); line.className='down-line'; couple.appendChild(line); const row=document.createElement('div'); row.className='children'; kids.forEach(k=>{const child=buildNode(k,depth+1,used); if(child)row.appendChild(child)}); couple.appendChild(row); }
+  return couple;
+}
+function applyScale(){ $('#treeCanvas').style.setProperty('--tree-scale',state.scale); $('#zoomReset').textContent=Math.round(state.scale*100)+'%'; }
+$('#zoomIn').onclick=()=>{state.scale=Math.min(1.35,state.scale+.1);applyScale()}; $('#zoomOut').onclick=()=>{state.scale=Math.max(.55,state.scale-.1);applyScale()}; $('#zoomReset').onclick=()=>{state.scale=1;applyScale()}; $('#treeFit').onclick=()=>{state.scale=.75;applyScale()};
+function renderMembers(){
+  const q=($('#memberSearch')?.value||'').toLowerCase(); const list=state.members.filter(m=>(m.name+' '+m.nickname+' '+m.rank).toLowerCase().includes(q));
+  $('#membersGrid').innerHTML=list.map(m=>card(m)).join('')||'<div class="empty">Member tidak ditemukan.</div>';
+}
+$('#memberSearch').addEventListener('input',renderMembers);
+function renderHistory(){
+  const fallback=[...state.members].filter(m=>m.joined_date||m.birth_date).sort((a,b)=>new Date(a.joined_date||a.birth_date)-new Date(b.joined_date||b.birth_date));
+  const data=state.events.length?state.events:fallback.map(m=>({event_date:m.joined_date||m.birth_date,title:m.name,description:m.bio||'A chapter in the MurphyLaw family story.'}));
+  $('#historyGrid').innerHTML=data.map((e,i)=>`<article class="timeline-item"><span>${fmtDate(e.event_date)||'MURPHYLAW'}</span><div><i>${String(i+1).padStart(2,'0')}</i><h3>${esc(e.title||e.name||'Family Event')}</h3><p>${esc(e.description||e.details||'')}</p></div></article>`).join('')||'<div class="empty">Belum ada sejarah keluarga.</div>';
+}
+function renderGallery(){
+  $('#galleryGrid').innerHTML=state.gallery.map(g=>`<figure><img src="${esc(g.image_url||g.photo_path||'assets/gallery-1.svg')}" alt="${esc(g.title||'MurphyLaw memory')}"><figcaption><strong>${esc(g.title||'Family Memory')}</strong><span>${esc(g.description||'')}</span></figcaption></figure>`).join('')||['gallery-1.svg','gallery-2.svg','gallery-3.svg'].map((x,i)=>`<figure><img src="assets/${x}"><figcaption><strong>MurphyLaw Archive ${i+1}</strong><span>Family memory</span></figcaption></figure>`).join('');
+}
+function openProfile(id){
+ const m=state.members.find(x=>x.id===id); if(!m)return; const partners=partnerOf(id), ps=parentsOf(id), kids=childrenOf(id), sib=siblingsOf(id), rs=relFor(id);
+ $('#profileContent').innerHTML=`<div class="profile-hero"><img src="${esc(photo(m))}"><div><span>GENERATION ${esc(m.generation||'—')}</span><h2>${esc(m.name)}</h2>${m.nickname?`<p class="nickname">“${esc(m.nickname)}”</p>`:''}<p>${esc(m.rank||m.status||'MurphyLaw Family')}</p></div></div>
+ <div class="profile-grid"><div><small>ABOUT</small><p>${esc(m.bio||'Belum ada biografi untuk anggota ini.')}</p></div><div><small>DETAILS</small><p>${m.birth_date?'Born '+fmtDate(m.birth_date):''}${m.joined_date?' · Joined '+fmtDate(m.joined_date):''}</p></div></div>
+ <div class="profile-links"><section><h4>💍 Spouse / Partner</h4>${partners.length?partners.map(x=>`<button data-id="${x.id}">${esc(x.name)}</button>`).join(''): '<p>—</p>'}</section><section><h4>Parents</h4>${ps.length?ps.map(x=>`<button data-id="${x.id}">${esc(x.name)}</button>`).join(''):'<p>—</p>'}</section><section><h4>Children</h4>${kids.length?kids.map(x=>`<button data-id="${x.id}">${esc(x.name)}</button>`).join(''):'<p>—</p>'}</section><section><h4>Siblings</h4>${sib.length?sib.map(x=>`<button data-id="${x.id}">${esc(x.name)}</button>`).join(''):'<p>—</p>'}</section></div>
+ <div class="relation-history"><h4>Relationship History</h4>${rs.length?rs.map(r=>{const other=state.members.find(x=>x.id===(r.member_a_id===id?r.member_b_id:r.member_a_id));return `<p><b>${esc(r.relationship_type)}</b> · ${esc(other?.name||'Unknown')} · ${esc(r.status)}${r.start_date?' · '+fmtDate(r.start_date):''}${r.end_date?' — '+fmtDate(r.end_date):''}</p>`}).join(''):'<p>No relationship history recorded.</p>'}</div>`;
+ $('#profileModal').classList.remove('hidden');
+}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-id]');if(el && !e.target.closest('a'))openProfile(el.dataset.id);if(e.target.matches('[data-close]')||e.target.closest('[data-close]'))$('#profileModal').classList.add('hidden')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#profileModal').classList.add('hidden')});
+$('#year').textContent=new Date().getFullYear(); load();
