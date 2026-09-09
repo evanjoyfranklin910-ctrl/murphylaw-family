@@ -11,7 +11,7 @@ async function load(){
     sb.from('members').select('*').order('generation').order('name'),
     sb.from('member_parents').select('*'),
     sb.from('member_relationships').select('*').order('start_date'),
-    sb.from('events').select('*').order('event_date'),
+    sb.from('events').select('*').order('sort_order'),
     sb.from('gallery').select('*').order('created_at',{ascending:false})
   ]);
   if(m.error){ console.error(m.error); $('#treeLoading').textContent='Supabase belum terhubung. Periksa config.js.'; return; }
@@ -60,9 +60,23 @@ function renderMembers(){
 }
 $('#memberSearch').addEventListener('input',renderMembers);
 function renderHistory(){
-  const fallback=[...state.members].filter(m=>m.joined_date||m.birth_date).sort((a,b)=>new Date(a.joined_date||a.birth_date)-new Date(b.joined_date||b.birth_date));
-  const data=state.events.length?state.events:fallback.map(m=>({event_date:m.joined_date||m.birth_date,title:m.name,description:m.bio||'A chapter in the MurphyLaw family story.'}));
-  $('#historyGrid').innerHTML=data.map((e,i)=>`<article class="timeline-item"><span>${fmtDate(e.event_date)||'MURPHYLAW'}</span><div><i>${String(i+1).padStart(2,'0')}</i><h3>${esc(e.title||e.name||'Family Event')}</h3><p>${esc(e.description||e.details||'')}</p></div></article>`).join('')||'<div class="empty">Belum ada sejarah keluarga.</div>';
+  const fallback=[...state.members]
+    .filter(m=>m.joined_date||m.birth_date)
+    .sort((a,b)=>new Date(a.joined_date||a.birth_date)-new Date(b.joined_date||b.birth_date))
+    .map(m=>({year:String(new Date(m.joined_date||m.birth_date).getFullYear()),title:m.name,body:m.bio||'A chapter in the MurphyLaw family story.'}));
+
+  const data=state.events.length ? [...state.events].sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)) : fallback;
+
+  $('#historyGrid').innerHTML=data.map((e,i)=>`
+    <article class="timeline-item">
+      <span>${esc(e.year || 'MURPHYLAW')}</span>
+      <div>
+        <i>${String(i+1).padStart(2,'0')}</i>
+        <h3>${esc(e.title || 'Family Event')}</h3>
+        <p>${esc(e.body || '')}</p>
+      </div>
+    </article>
+  `).join('') || '<div class="empty">Belum ada sejarah keluarga.</div>';
 }
 function renderGallery(){
   $('#galleryGrid').innerHTML=state.gallery.map(g=>`<figure><img src="${esc(g.image_url||g.photo_path||'assets/gallery-1.svg')}" alt="${esc(g.title||'MurphyLaw memory')}"><figcaption><strong>${esc(g.title||'Family Memory')}</strong><span>${esc(g.description||'')}</span></figcaption></figure>`).join('')||['gallery-1.svg','gallery-2.svg','gallery-3.svg'].map((x,i)=>`<figure><img src="assets/${x}"><figcaption><strong>MurphyLaw Archive ${i+1}</strong><span>Family memory</span></figcaption></figure>`).join('');
